@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+*.log
+
+# Runtime state. Keep examples/templates in git, not live trading state.
+app/data/state.json
+app/data/live-status.json
+app/data/dashboard.json
+app/notification-config.json
+.env
+.env.*
+!.env.example

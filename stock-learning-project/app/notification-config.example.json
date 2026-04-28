@@ -1,0 +1,13 @@
+{
+  "discord": {
+    "enabled": false,
+    "webhookUrl": "",
+    "events": {
+      "paperBuy": true,
+      "takeProfit": true,
+      "stopLoss": true,
+      "dailyReview": true,
+      "learningNote": true
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "a-share-learning-lab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "update": "node scripts/generate-research.mjs",
+    "live": "node scripts/live-paper-trader.mjs",
+    "serve": "node server/server.mjs",
+    "dev": "node server/server.mjs"
+  }
+}

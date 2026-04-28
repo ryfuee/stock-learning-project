@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A股专业投研平台</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark">A</span>
+        <div>
+          <strong>A股投研</strong>
+          <small>Paper Trading Lab</small>
+        </div>
+      </div>
+      <nav class="nav">
+        <a href="#overview">总览</a>
+        <a href="#sectors">板块雷达</a>
+        <a href="#research">自动调研</a>
+        <a href="#trading">模拟交易</a>
+        <a href="#review">每日复盘</a>
+        <a href="#strategy">策略优化</a>
+        <a href="#alerts">通知</a>
+      </nav>
+      <div class="sidebar-foot">
+        <small>真实行情源</small>
+        <strong id="sourceSummary">加载中</strong>
+      </div>
+    </aside>
+
+    <main class="workspace">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">A股专业投研平台</p>
+          <h1>自动调研、实时模拟、盘后复盘</h1>
+        </div>
+        <button id="refreshBtn" class="refresh-button" title="刷新数据">刷新</button>
+      </header>
+
+      <section class="status-strip" id="statusStrip"></section>
+
+      <section id="overview" class="section">
+        <div class="section-head">
+          <div>
+            <h2>总览</h2>
+            <p id="marketRegime">加载中</p>
+          </div>
+          <span id="dateBadge" class="date-badge"></span>
+        </div>
+        <div class="kpi-grid" id="portfolioCards"></div>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>市场温度</h3>
+              <span>指数</span>
+            </div>
+            <div class="index-grid" id="indexGrid"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>系统动作</h3>
+              <span>交易状态</span>
+            </div>
+            <div id="systemActions" class="action-list"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="sectors" class="section">
+        <div class="section-head">
+          <div>
+            <h2>板块雷达</h2>
+            <p>按赚钱效应、成交额和持续性排序</p>
+          </div>
+        </div>
+        <div id="hotBoards" class="sector-grid"></div>
+      </section>
+
+      <section id="research" class="section">
+        <div class="section-head">
+          <div>
+            <h2>自动调研股票</h2>
+            <p>业务、客户、利润驱动、风险驱动和待验证问题</p>
+          </div>
+        </div>
+        <div id="researchGrid" class="research-grid"></div>
+      </section>
+
+      <section id="trading" class="section">
+        <div class="section-head">
+          <div>
+            <h2>实时模拟交易</h2>
+            <p>含佣金、过户费、印花税、滑点和 T+1</p>
+          </div>
+        </div>
+        <article class="panel">
+          <div class="panel-head">
+            <h3>候选信号</h3>
+            <span>只做纸面交易</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>公司</th>
+                  <th>板块</th>
+                  <th>涨跌幅</th>
+                  <th>成交额</th>
+                  <th>评分</th>
+                  <th>信号</th>
+                  <th>依据</th>
+                </tr>
+              </thead>
+              <tbody id="candidateRows"></tbody>
+            </table>
+          </div>
+        </article>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>模拟持仓</h3>
+              <span>Open</span>
+            </div>
+            <div id="positions" class="stack"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>交易流水</h3>
+              <span>最近50条</span>
+            </div>
+            <div class="table-wrap compact">
+              <table>
+                <thead>
+                  <tr>
+                    <th>日期</th>
+                    <th>方向</th>
+                    <th>股票</th>
+                    <th>股数</th>
+                    <th>价格</th>
+                    <th>费用</th>
+                  </tr>
+                </thead>
+                <tbody id="tradeRows"></tbody>
+              </table>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="review" class="section">
+        <div class="section-head">
+          <div>
+            <h2>每日复盘</h2>
+            <p>市场、板块、交易动作和明日问题</p>
+          </div>
+        </div>
+        <div id="dailyReview" class="review-grid"></div>
+      </section>
+
+      <section id="strategy" class="section">
+        <div class="section-head">
+          <div>
+            <h2>策略优化</h2>
+            <p>胜率、样本、偏好和下一步优化</p>
+          </div>
+        </div>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>策略表现</h3>
+              <span>Closed trades</span>
+            </div>
+            <div id="strategyReview" class="stack"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>学习偏好</h3>
+              <span>按板块</span>
+            </div>
+            <div id="learning" class="stack"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="alerts" class="section">
+        <div class="section-head">
+          <div>
+            <h2>通知中心</h2>
+            <p>Discord 机器人提醒配置和待发送事件</p>
+          </div>
+        </div>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>提醒队列</h3>
+              <span>本地预览</span>
+            </div>
+            <div id="notificationList" class="stack"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>配置</h3>
+              <span>默认关闭</span>
+            </div>
+            <div id="settingsList" class="stack"></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

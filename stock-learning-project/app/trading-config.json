@@ -1,0 +1,15 @@
+{
+  "initialCash": 100000,
+  "maxPositions": 5,
+  "maxPositionPct": 0.2,
+  "buyScoreThreshold": 72,
+  "stopLossPct": -5,
+  "takeProfitPct": 10,
+  "commissionRate": 0.0003,
+  "minCommission": 5,
+  "transferFeeRate": 0.00001,
+  "stampDutyRate": 0.0005,
+  "slippageRate": 0.0002,
+  "lotSize": 100,
+  "pollSeconds": 60
+}

@@ -1,0 +1,28 @@
+name: a-share-research
+
+services:
+  web:
+    build: .
+    container_name: a-share-research-web
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 4173
+      MARKET_NOTES_DIR: /02-market-notes
+    ports:
+      - "4173:4173"
+    volumes:
+      - ./data:/app/data
+      - ../02-market-notes:/02-market-notes
+
+  trader:
+    build: .
+    container_name: a-share-research-trader
+    restart: unless-stopped
+    command: ["node", "scripts/live-paper-trader.mjs"]
+    environment:
+      NODE_ENV: production
+      MARKET_NOTES_DIR: /02-market-notes
+    volumes:
+      - ./data:/app/data
+      - ../02-market-notes:/02-market-notes
