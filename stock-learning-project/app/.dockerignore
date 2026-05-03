@@ -1,5 +1,11 @@
 data
+accounts
+a-share-platform.sqlite*
+llm-secrets.json
+notification-config.json
 node_modules
 .git
 .DS_Store
 *.log
+__pycache__
+*.pyc

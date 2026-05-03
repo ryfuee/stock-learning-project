@@ -5,6 +5,11 @@
   "type": "module",
   "scripts": {
     "update": "node scripts/generate-research.mjs",
+    "optimize": "node scripts/strategy-optimizer.mjs",
+    "agent": "node scripts/research-decision-agent.mjs",
+    "lab": "node scripts/strategy-lab.mjs",
+    "backtest": "node scripts/backtest-replay.mjs",
+    "sweep": "node scripts/parameter-sweep.mjs",
     "live": "node scripts/live-paper-trader.mjs",
     "serve": "node server/server.mjs",
     "dev": "node server/server.mjs"

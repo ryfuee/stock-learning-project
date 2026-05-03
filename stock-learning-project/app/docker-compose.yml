@@ -8,7 +8,30 @@ services:
     environment:
       HOST: 0.0.0.0
       PORT: 4173
+      A_SHARE_RUNTIME_DIR: /app/data
       MARKET_NOTES_DIR: /02-market-notes
+      A_SHARE_ADMIN_USER: ${A_SHARE_ADMIN_USER:-}
+      A_SHARE_ADMIN_PASSWORD: ${A_SHARE_ADMIN_PASSWORD:-}
+      A_SHARE_SESSION_DAYS: ${A_SHARE_SESSION_DAYS:-14}
+      A_SHARE_COOKIE_SECURE: ${A_SHARE_COOKIE_SECURE:-}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ZAI_API_KEY: ${ZAI_API_KEY:-}
+      ZAI_BASE_URL: ${ZAI_BASE_URL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      MOONSHOT_API_KEY: ${MOONSHOT_API_KEY:-}
+      ZHIPUAI_API_KEY: ${ZHIPUAI_API_KEY:-}
+      ARK_API_KEY: ${ARK_API_KEY:-}
+      PYTHON_BIN: ${PYTHON_BIN:-python3}
+      TUSHARE_TOKEN: ${TUSHARE_TOKEN:-}
+      BOCHA_API_KEY: ${BOCHA_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      SERPAPI_API_KEY: ${SERPAPI_API_KEY:-}
+      ANSPIRE_API_KEY: ${ANSPIRE_API_KEY:-}
+      A_SHARE_AUTO_APPLY_OPTIMIZER: ${A_SHARE_AUTO_APPLY_OPTIMIZER:-}
     ports:
       - "4173:4173"
     volumes:
@@ -22,7 +45,26 @@ services:
     command: ["node", "scripts/live-paper-trader.mjs"]
     environment:
       NODE_ENV: production
+      A_SHARE_RUNTIME_DIR: /app/data
       MARKET_NOTES_DIR: /02-market-notes
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      LLM_MODEL: ${LLM_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ZAI_API_KEY: ${ZAI_API_KEY:-}
+      ZAI_BASE_URL: ${ZAI_BASE_URL:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-}
+      MOONSHOT_API_KEY: ${MOONSHOT_API_KEY:-}
+      ZHIPUAI_API_KEY: ${ZHIPUAI_API_KEY:-}
+      ARK_API_KEY: ${ARK_API_KEY:-}
+      PYTHON_BIN: ${PYTHON_BIN:-python3}
+      TUSHARE_TOKEN: ${TUSHARE_TOKEN:-}
+      BOCHA_API_KEY: ${BOCHA_API_KEY:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      SERPAPI_API_KEY: ${SERPAPI_API_KEY:-}
+      ANSPIRE_API_KEY: ${ANSPIRE_API_KEY:-}
+      A_SHARE_AUTO_APPLY_OPTIMIZER: ${A_SHARE_AUTO_APPLY_OPTIMIZER:-}
     volumes:
       - ./data:/app/data
       - ../02-market-notes:/02-market-notes

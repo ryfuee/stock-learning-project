@@ -5,11 +5,73 @@
   "buyScoreThreshold": 72,
   "stopLossPct": -5,
   "takeProfitPct": 10,
+  "adaptiveRisk": {
+    "enabled": true,
+    "minStopLossPct": -9,
+    "maxStopLossPct": -2.5,
+    "minTakeProfitPct": 4,
+    "maxTakeProfitPct": 18
+  },
+  "riskControls": {
+    "enabled": true,
+    "maxBoardExposurePct": 0.45,
+    "maxAccountDrawdownPct": 6,
+    "pauseAfterLossStreak": 3,
+    "chasePctLimit": 7.5,
+    "minAmount": 500000000,
+    "timeStopDays": 7,
+    "timeStopMinProfitPct": 1
+  },
   "commissionRate": 0.0003,
   "minCommission": 5,
   "transferFeeRate": 0.00001,
   "stampDutyRate": 0.0005,
   "slippageRate": 0.0002,
   "lotSize": 100,
-  "pollSeconds": 60
+  "pollSeconds": 60,
+  "watchlistText": "",
+  "llm": {
+    "enabled": true,
+    "decisionMode": "score_veto",
+    "provider": "z-ai-chat",
+    "baseUrl": "https://api.z.ai/api/coding/paas/v4",
+    "model": "glm-5.1",
+    "maxCandidates": 6,
+    "scoreImpact": 12,
+    "minConfidence": 60,
+    "requireBuyApproval": true,
+    "temperature": 0.2,
+    "timeoutMs": 120000
+  },
+  "context": {
+    "enabled": true,
+    "includeNews": true,
+    "includeAnnouncements": true,
+    "includeF10": true,
+    "maxNews": 6,
+    "maxAnnouncements": 4,
+    "timeoutMs": 8000
+  },
+  "dataProviders": {
+    "enabled": true,
+    "useAkshare": true,
+    "useBaostock": true,
+    "useTushare": false,
+    "maxCandidates": 8,
+    "timeoutMs": 30000,
+    "pythonBin": "python3"
+  },
+  "eventSearch": {
+    "enabled": true,
+    "useBocha": true,
+    "useTavily": true,
+    "useSerpApi": false,
+    "useAnspire": false,
+    "maxCandidates": 6,
+    "maxQueriesPerStock": 2,
+    "resultsPerQuery": 5,
+    "freshness": "oneWeek",
+    "timeoutMs": 12000,
+    "cacheHours": 6
+  }
 }

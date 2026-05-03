@@ -1,12 +1,27 @@
 .DS_Store
 node_modules/
 *.log
+__pycache__/
+*.pyc
 
 # Runtime state. Keep examples/templates in git, not live trading state.
 app/data/state.json
 app/data/live-status.json
 app/data/dashboard.json
+app/data/event-search-cache.json
+app/data/backtest-report.json
+app/data/parameter-sweep.json
+app/data/strategy-optimizer.json
+app/data/accounts/
+app/data/a-share-platform.sqlite*
+app/accounts/
+app/a-share-platform.sqlite*
+02-market-notes/accounts/
+02-market-notes/backtests/
+02-market-notes/parameter-sweep/
+02-market-notes/strategy-optimizer/
 app/notification-config.json
+app/llm-secrets.json
 .env
 .env.*
 !.env.example
