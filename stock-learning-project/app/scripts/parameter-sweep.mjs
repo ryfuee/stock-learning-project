@@ -4,6 +4,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
+import { resolveStrategy } from "./strategies/index.mjs";
 
 const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
@@ -116,6 +117,7 @@ function parseArgs() {
     end,
     maxSymbols: clamp(Math.round(num(args.maxSymbols, 12)), 3, 50),
     provider: args.provider || "auto",
+    strategy: args.strategy || "momentum-score",
     topN: clamp(Math.round(num(args.topN, 12)), 3, 50),
     buyScoreThresholds: parseNumberList(args.buyScoreThresholds, [72, 75, 78]),
     stopLosses: parseNumberList(args.stopLosses, [-6, -5, -4]),
@@ -196,11 +198,6 @@ function avg(items) {
   return items.length ? items.reduce((sum, item) => sum + item, 0) / items.length : 0;
 }
 
-function movingAverage(bars, index, length) {
-  if (index + 1 < length) return null;
-  return avg(bars.slice(index + 1 - length, index + 1).map((bar) => num(bar.close)));
-}
-
 function calcCommission(gross, config) {
   return Math.max(gross * num(config.commissionRate), num(config.minCommission));
 }
@@ -218,30 +215,6 @@ function sellFees(price, shares, config) {
   const transferFee = gross * num(config.transferFeeRate);
   const stampDuty = gross * num(config.stampDutyRate);
   return commission + transferFee + stampDuty;
-}
-
-function buildSignal(code, bars, index, config) {
-  if (index < 25) return null;
-  const bar = bars[index];
-  const prev5 = bars[index - 5];
-  const prev20 = bars[index - 20];
-  const ma5 = movingAverage(bars, index, 5);
-  const ma20 = movingAverage(bars, index, 20);
-  const recentAmounts = bars.slice(Math.max(0, index - 20), index).map((item) => num(item.amount)).filter(Boolean);
-  const amountRatio = avg(recentAmounts) ? num(bar.amount) / avg(recentAmounts) : 1;
-  const ret5 = prev5?.close ? (bar.close / prev5.close - 1) * 100 : 0;
-  const ret20 = prev20?.close ? (bar.close / prev20.close - 1) * 100 : 0;
-  const trend = ma20 ? (bar.close / ma20 - 1) * 100 : 0;
-  const score = clamp(Math.round(48 + ret5 * 3 + ret20 * 0.7 + trend * 2 + Math.min(12, amountRatio * 4)), 0, 100);
-  const controls = { ...defaultConfig.riskControls, ...(config.riskControls || {}) };
-  const failed =
-    !(ma5 && ma20 && bar.close > ma20 && ma5 > ma20) ||
-    ret5 < 2.5 ||
-    ret5 > num(controls.chasePctLimit, 7.5) ||
-    num(bar.pctChg) > num(controls.chasePctLimit, 7.5) ||
-    num(bar.amount) < num(controls.minAmount, 0) ||
-    score < num(config.buyScoreThreshold, 72);
-  return failed ? null : { code, score, thesis: `评分${score}，5日动量${signed(ret5)}%，20日趋势${signed(ret20)}%。` };
 }
 
 function markToMarket(cash, positions, seriesByCode, date) {
@@ -278,7 +251,7 @@ function filterHistory(history, start, end) {
   };
 }
 
-function runBacktest({ history, codes, config, start, end }) {
+function runBacktest({ history, codes, config, start, end, strategy }) {
   const seriesByCode = new Map();
   const calendar = new Set();
   for (const code of codes) {
@@ -298,7 +271,9 @@ function runBacktest({ history, codes, config, start, end }) {
   let lossStreak = 0;
   let peakEquity = initialCash;
 
-  for (let dateIndex = 25; dateIndex < dates.length; dateIndex++) {
+  const startIndex = Math.max(1, num(strategy.minHistory, 25));
+
+  for (let dateIndex = startIndex; dateIndex < dates.length; dateIndex++) {
     const date = dates[dateIndex];
     for (const order of pendingSells) {
       const position = positions.get(order.code);
@@ -365,17 +340,28 @@ function runBacktest({ history, codes, config, start, end }) {
         position.highestClose = Math.max(position.highestClose || 0, num(current.close));
         position.lastBar = current;
         const pnlPct = position.totalCost > 0 ? ((num(current.close) * position.shares - position.totalCost) / position.totalCost) * 100 : 0;
-        const ma20 = movingAverage(source.bars, current.index, 20);
         const heldDays = dateIndex - position.entryIndex;
-        let reason = "";
-        if (pnlPct <= num(config.stopLossPct, -5)) reason = `止损 ${signed(pnlPct)}%`;
-        else if (pnlPct >= num(config.takeProfitPct, 10)) reason = `止盈 ${signed(pnlPct)}%`;
-        else if (heldDays >= num(controls.timeStopDays, 7) && pnlPct < num(controls.timeStopMinProfitPct, 1)) reason = "时间止损";
-        else if (ma20 && current.close < ma20 && pnlPct < 2) reason = "跌破20日均线";
-        if (reason) pendingSells.push({ code, reason });
+        const exitSignal = strategy.buildExitSignal?.({
+          code,
+          bars: source.bars,
+          current,
+          index: current.index,
+          position,
+          config,
+          controls,
+          pnlPct,
+          heldDays,
+        });
+        if (exitSignal?.reason) pendingSells.push({ code, reason: exitSignal.reason });
         continue;
       }
-      const signal = buildSignal(code, source.bars, current.index, config);
+      const signal = strategy.buildEntrySignal?.({
+        code,
+        bars: source.bars,
+        index: current.index,
+        config,
+        defaultRiskControls: defaultConfig.riskControls,
+      });
       if (signal) signals.push(signal);
     }
     pendingBuys = signals.sort((a, b) => b.score - a.score).slice(0, Math.max(0, num(config.maxPositions, 5) - positions.size));
@@ -473,6 +459,7 @@ function buildMarkdown(report) {
   lines.push("说明：本报告只用于纸面交易策略研究，不构成投资建议。");
   lines.push(`账户：${report.account.name}`);
   lines.push(`数据源：${report.source}`);
+  lines.push(`策略：${report.strategy?.name || report.strategy?.id || "未指定"}`);
   lines.push("");
   lines.push("## 最优候选");
   for (const item of report.rankings.slice(0, 8)) {
@@ -488,6 +475,7 @@ function buildMarkdown(report) {
 
 async function main() {
   const args = parseArgs();
+  const strategy = resolveStrategy(args.strategy);
   const storedConfig = await readJson(configFile, {});
   const config = {
     ...defaultConfig,
@@ -518,7 +506,7 @@ async function main() {
     };
     const windowResults = windows.map((window) => {
       const sliced = filterHistory(history, window.start, window.end);
-      return { ...window, ...runBacktest({ history: sliced, codes, config: nextConfig, start: window.start, end: window.end }) };
+      return { ...window, ...runBacktest({ history: sliced, codes, config: nextConfig, start: window.start, end: window.end, strategy }) };
     });
     return {
       id: comboId(params),
@@ -542,6 +530,11 @@ async function main() {
     },
     status: "ok",
     source: history.source || "unknown",
+    strategy: {
+      id: strategy.id,
+      name: strategy.name,
+      description: strategy.description,
+    },
     range: { start: args.start, end: args.end },
     universe: { count: codes.length, codes },
     grid: {

@@ -4,6 +4,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
+import { availableStrategies, resolveStrategy } from "./strategies/index.mjs";
 
 const execFileAsync = promisify(execFile);
 const __filename = fileURLToPath(import.meta.url);
@@ -64,13 +65,6 @@ function signed(value, digits = 2) {
   return `${n > 0 ? "+" : ""}${n.toFixed(digits)}`;
 }
 
-function money(value) {
-  const n = num(value);
-  if (Math.abs(n) >= 1e8) return `${(n / 1e8).toFixed(2)}亿`;
-  if (Math.abs(n) >= 1e4) return `${(n / 1e4).toFixed(2)}万`;
-  return n.toFixed(2);
-}
-
 function todayShanghai() {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Shanghai",
@@ -108,6 +102,7 @@ function parseArgs() {
     end,
     maxSymbols: clamp(Math.round(num(args.maxSymbols, 12)), 3, 50),
     provider: args.provider || "auto",
+    strategy: args.strategy || "momentum-score",
     scenario: args.scenario || "current",
     overrides: {
       buyScoreThreshold: args.buyScoreThreshold === undefined ? undefined : num(args.buyScoreThreshold),
@@ -166,8 +161,9 @@ function chooseUniverse(config, dashboard, maxSymbols) {
   ]).slice(0, maxSymbols);
 }
 
-function strategyVersion(config) {
+function strategyVersion(config, strategy) {
   const snapshot = {
+    strategy: strategy.id,
     buyScoreThreshold: config.buyScoreThreshold,
     maxPositions: config.maxPositions,
     maxPositionPct: config.maxPositionPct,
@@ -215,11 +211,6 @@ function avg(items) {
   return items.length ? items.reduce((sum, item) => sum + item, 0) / items.length : 0;
 }
 
-function movingAverage(bars, index, length) {
-  if (index + 1 < length) return null;
-  return avg(bars.slice(index + 1 - length, index + 1).map((bar) => num(bar.close)));
-}
-
 function calcCommission(gross, config) {
   return Math.max(gross * num(config.commissionRate), num(config.minCommission));
 }
@@ -247,41 +238,6 @@ function sellFill(price, config) {
   return price * (1 - num(config.slippageRate));
 }
 
-function buildSignal(code, bars, index, config) {
-  if (index < 25) return null;
-  const bar = bars[index];
-  const prev5 = bars[index - 5];
-  const prev20 = bars[index - 20];
-  const ma5 = movingAverage(bars, index, 5);
-  const ma20 = movingAverage(bars, index, 20);
-  const recentAmounts = bars.slice(Math.max(0, index - 20), index).map((item) => num(item.amount)).filter(Boolean);
-  const amountRatio = avg(recentAmounts) ? num(bar.amount) / avg(recentAmounts) : 1;
-  const ret5 = prev5?.close ? (bar.close / prev5.close - 1) * 100 : 0;
-  const ret20 = prev20?.close ? (bar.close / prev20.close - 1) * 100 : 0;
-  const trend = ma20 ? (bar.close / ma20 - 1) * 100 : 0;
-  const score = clamp(Math.round(48 + ret5 * 3 + ret20 * 0.7 + trend * 2 + Math.min(12, amountRatio * 4)), 0, 100);
-  const controls = { ...defaultConfig.riskControls, ...(config.riskControls || {}) };
-  const reasons = [];
-  if (!(ma5 && ma20 && bar.close > ma20 && ma5 > ma20)) reasons.push("均线趋势未确认");
-  if (ret5 < 2.5) reasons.push(`5日动量不足：${signed(ret5)}%`);
-  if (ret5 > num(controls.chasePctLimit, 7.5)) reasons.push(`5日涨幅过高：${signed(ret5)}%`);
-  if (num(bar.pctChg) > num(controls.chasePctLimit, 7.5)) reasons.push(`单日追高风险：${signed(bar.pctChg)}%`);
-  if (num(bar.amount) < num(controls.minAmount, 0)) reasons.push(`成交额不足：${money(bar.amount)}`);
-  if (score < num(config.buyScoreThreshold, 72)) reasons.push(`评分不足：${score}`);
-  return {
-    code,
-    date: bar.date,
-    score,
-    ret5,
-    ret20,
-    amount: bar.amount,
-    close: bar.close,
-    passed: reasons.length === 0,
-    reasons,
-    thesis: `价格在20日线上方，5日动量${signed(ret5)}%，20日趋势${signed(ret20)}%。`,
-  };
-}
-
 function markToMarket(cash, positions, seriesByCode, date) {
   let value = cash;
   for (const position of positions.values()) {
@@ -307,7 +263,7 @@ function benchmarkReturn(bars) {
   return ((usable.at(-1).close - usable[0].close) / usable[0].close) * 100;
 }
 
-function runBacktest({ history, codes, config, start, end }) {
+function runBacktest({ history, codes, config, start, end, strategy }) {
   const seriesByCode = new Map();
   const calendar = new Set();
   for (const code of codes) {
@@ -327,7 +283,9 @@ function runBacktest({ history, codes, config, start, end }) {
   let lossStreak = 0;
   let peakEquity = initialCash;
 
-  for (let dateIndex = 25; dateIndex < dates.length; dateIndex++) {
+  const startIndex = Math.max(1, num(strategy.minHistory, 25));
+
+  for (let dateIndex = startIndex; dateIndex < dates.length; dateIndex++) {
     const date = dates[dateIndex];
 
     for (const order of pendingSells) {
@@ -421,26 +379,34 @@ function runBacktest({ history, codes, config, start, end }) {
         position.highestClose = Math.max(position.highestClose || 0, num(current.close));
         position.lastBar = current;
         const pnlPct = position.totalCost > 0 ? ((num(current.close) * position.shares - position.totalCost) / position.totalCost) * 100 : 0;
-        const ma20 = movingAverage(source.bars, current.index, 20);
         const heldDays = dateIndex - position.entryIndex;
-        let reason = "";
-        if (pnlPct <= num(config.stopLossPct, -5)) reason = `止损触发 ${signed(pnlPct)}%`;
-        else if (pnlPct >= num(config.takeProfitPct, 10)) reason = `止盈触发 ${signed(pnlPct)}%`;
-        else if (heldDays >= num(controls.timeStopDays, 7) && pnlPct < num(controls.timeStopMinProfitPct, 1)) {
-          reason = `时间止损：持有${heldDays}日收益${signed(pnlPct)}%`;
-        } else if (ma20 && current.close < ma20 && pnlPct < 2) {
-          reason = "跌破20日均线且利润不足";
-        }
-        if (reason) {
+        const exitSignal = strategy.buildExitSignal?.({
+          code,
+          bars: source.bars,
+          current,
+          index: current.index,
+          position,
+          config,
+          controls,
+          pnlPct,
+          heldDays,
+        });
+        if (exitSignal?.reason) {
           pendingSells.push({
             code,
-            reason,
-            attribution: { type: "EXIT", trigger: reason, pnlPct, heldDays },
+            reason: exitSignal.reason,
+            attribution: exitSignal.attribution || { type: "EXIT", trigger: exitSignal.reason, pnlPct, heldDays },
           });
         }
         continue;
       }
-      const signal = buildSignal(code, source.bars, current.index, config);
+      const signal = strategy.buildEntrySignal?.({
+        code,
+        bars: source.bars,
+        index: current.index,
+        config,
+        defaultRiskControls: defaultConfig.riskControls,
+      });
       if (signal?.passed) signals.push(signal);
     }
     pendingBuys = signals.sort((a, b) => b.score - a.score).slice(0, Math.max(0, num(config.maxPositions, 5) - positions.size));
@@ -472,9 +438,15 @@ function runBacktest({ history, codes, config, start, end }) {
     status: "ok",
     source: history.source || "unknown",
     range: { start, end, tradingDays: dates.length },
-    strategyVersion: strategyVersion(config),
+    strategy: {
+      id: strategy.id,
+      name: strategy.name,
+      description: strategy.description,
+    },
+    strategyVersion: strategyVersion(config, strategy),
     scenario: config.backtestScenario || "current",
     testedParameters: {
+      strategy: strategy.id,
       buyScoreThreshold: config.buyScoreThreshold,
       stopLossPct: config.stopLossPct,
       takeProfitPct: config.takeProfitPct,
@@ -516,6 +488,7 @@ function buildMarkdown(report) {
   lines.push("");
   if (report.testedParameters) {
     lines.push("## 参数");
+    lines.push(`- 策略：${report.strategy?.name || report.testedParameters.strategy}`);
     lines.push(`- 买入阈值：${report.testedParameters.buyScoreThreshold}`);
     lines.push(`- 止损/止盈：${signed(report.testedParameters.stopLossPct, 1)}% / ${signed(report.testedParameters.takeProfitPct, 1)}%`);
     lines.push(`- 追高上限：${signed(report.testedParameters.chasePctLimit, 1)}%`);
@@ -541,6 +514,7 @@ function buildMarkdown(report) {
 
 async function main() {
   const args = parseArgs();
+  const strategy = resolveStrategy(args.strategy);
   const storedConfig = await readJson(configFile, {});
   const baseConfig = {
     ...defaultConfig,
@@ -558,12 +532,25 @@ async function main() {
   if (!history.ok && !Object.keys(history.series || {}).length) {
     throw new Error(`真实历史行情获取失败：${(history.warnings || []).join("; ") || "unknown"}`);
   }
-  const report = runBacktest({ history, codes, config, start: args.start, end: args.end });
+  const report = runBacktest({ history, codes, config, start: args.start, end: args.end, strategy });
   await fs.mkdir(dataDir, { recursive: true });
   await fs.writeFile(outputFile, `${JSON.stringify(report, null, 2)}\n`, "utf8");
   await fs.mkdir(backtestNotesDir, { recursive: true });
   await fs.writeFile(path.join(backtestNotesDir, `${args.start}_${args.end}.md`), buildMarkdown(report), "utf8");
-  console.log(JSON.stringify({ ok: true, outputFile, metrics: report.metrics, warnings: report.warnings }, null, 2));
+  console.log(
+    JSON.stringify(
+      {
+        ok: true,
+        outputFile,
+        strategy: report.strategy,
+        metrics: report.metrics,
+        warnings: report.warnings,
+        availableStrategies: availableStrategies(),
+      },
+      null,
+      2,
+    ),
+  );
 }
 
 main().catch(async (error) => {

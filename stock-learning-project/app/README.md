@@ -132,17 +132,32 @@ Agent 输出的是“观察 -> 诊断 -> 决策姿态 -> 自适应策略 -> 研�
 页面的「历史回测」会调用 `scripts/backtest-replay.mjs`，通过 Baostock 或 AKShare 抓取真实历史日线，然后按“收盘产生信号、下一交易日开盘成交”回放策略：
 
 ```bash
-node scripts/backtest-replay.mjs --start=2025-01-01 --end=2026-04-29 --maxSymbols=12
+node scripts/backtest-replay.mjs --start=2025-01-01 --end=2026-04-29 --maxSymbols=12 --strategy=momentum-score
 ```
 
 回测会写入当前模拟账户目录下的 `data/backtest-report.json`，并生成 Markdown 到 `02-market-notes/backtests/` 或账号专属目录。当前回测只使用真实价格/成交额数据，不会模拟历史新闻、公告或舆情。页面点击「运行回测」后会自动重跑策略优化器，策略页会展示“回测证据”和建议的买入阈值、止损止盈、追高上限。
+
+当前支持的策略：
+
+- `momentum-score`：原有动量评分策略，使用均线趋势、短期动量、成交额和追高过滤。
+- `turtle`：海龟趋势突破策略，使用唐奇安通道和 ATR 波动率确认。
+
+## 数据质量
+
+运行数据质量报告可以先检查行情输入，再决定是否进入回测和 Agent 决策：
+
+```bash
+node scripts/data-quality.mjs --start=2025-01-01 --end=2026-04-29 --maxSymbols=20
+```
+
+报告会写入当前模拟账户目录下的 `data/data-quality.json`，并生成 Markdown 到 `02-market-notes/data-quality/` 或账号专属目录。它会检查样本覆盖、缺失交易日、成交额缺失、平线样本和异常涨跌。
 
 ## 参数寻优
 
 页面的「历史回测」里有「参数寻优」模块，会调用 `scripts/parameter-sweep.mjs`。它会批量测试多组买入阈值、止损、止盈、追高上限和时间止损，并在全区间、近一年、近半年等窗口里对比稳定性：
 
 ```bash
-node scripts/parameter-sweep.mjs --start=2025-01-01 --end=2026-04-29 --maxSymbols=12 --topN=12
+node scripts/parameter-sweep.mjs --start=2025-01-01 --end=2026-04-29 --maxSymbols=12 --topN=12 --strategy=momentum-score
 ```
 
 寻优会写入当前模拟账户目录下的 `data/parameter-sweep.json`，并生成 Markdown 到 `02-market-notes/parameter-sweep/` 或账号专属目录。排序分数偏向多窗口稳定性，不按单段最高收益排序；交易次数过少会被惩罚，避免“没怎么交易所以回撤很低”的假稳健。

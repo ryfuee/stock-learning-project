@@ -41,6 +41,7 @@ const els = {
   backtestStart: document.querySelector("#backtestStart"),
   backtestEnd: document.querySelector("#backtestEnd"),
   backtestMaxSymbols: document.querySelector("#backtestMaxSymbols"),
+  backtestStrategy: document.querySelector("#backtestStrategy"),
   backtestProvider: document.querySelector("#backtestProvider"),
   runBacktestBtn: document.querySelector("#runBacktestBtn"),
   runSweepBacktestBtn: document.querySelector("#runSweepBacktestBtn"),
@@ -1602,7 +1603,7 @@ function renderBacktest(report = latestBacktest) {
     </div>
     <div class="note-block">
       <strong>${report.range?.start || ""} 至 ${report.range?.end || ""}</strong>
-      <p>场景 ${report.scenario === "sweep-best" ? "寻优第一名候选参数" : "当前生效策略"}；数据源 ${report.source || "unknown"}；股票 ${report.universe?.count || 0} 只；交易日 ${
+      <p>策略 ${report.strategy?.name || report.strategy?.id || "动量评分策略"}；场景 ${report.scenario === "sweep-best" ? "寻优第一名候选参数" : "当前生效策略"}；数据源 ${report.source || "unknown"}；股票 ${report.universe?.count || 0} 只；交易日 ${
         report.range?.tradingDays || 0
       } 天；策略版本 ${report.strategyVersion || "未生成"}。</p>
       ${
@@ -1685,7 +1686,7 @@ function renderSweep(report = latestSweep) {
     </div>
     <div class="note-block">
       <strong>推荐候选参数</strong>
-      <p>买入阈值 ${p.buyScoreThreshold ?? "-"}；止损 ${signed(p.stopLossPct || 0, 1)}%；止盈 ${signed(p.takeProfitPct || 0, 1)}%；追高上限 ${signed(p.chasePctLimit || 0, 1)}%；时间止损 ${p.timeStopDay ?? "-"} 天。</p>
+      <p>策略 ${report.strategy?.name || report.strategy?.id || "动量评分策略"}；买入阈值 ${p.buyScoreThreshold ?? "-"}；止损 ${signed(p.stopLossPct || 0, 1)}%；止盈 ${signed(p.takeProfitPct || 0, 1)}%；追高上限 ${signed(p.chasePctLimit || 0, 1)}%；时间止损 ${p.timeStopDay ?? "-"} 天。</p>
       ${list(report.notes || [])}
     </div>
   `;
@@ -2386,6 +2387,7 @@ async function runParameterSweepFromUi() {
       start: els.backtestStart?.value || dateDaysAgo(730),
       end: els.backtestEnd?.value || new Date().toISOString().slice(0, 10),
       maxSymbols: Number(els.backtestMaxSymbols?.value || 12),
+      strategy: els.backtestStrategy?.value || "momentum-score",
       provider: els.backtestProvider?.value || "auto",
       topN: 12,
     };
@@ -2656,6 +2658,7 @@ async function runBacktestFromUi({ useSweepBest = false } = {}) {
       start: els.backtestStart?.value || dateDaysAgo(365),
       end: els.backtestEnd?.value || new Date().toISOString().slice(0, 10),
       maxSymbols: Number(els.backtestMaxSymbols?.value || 12),
+      strategy: els.backtestStrategy?.value || "momentum-score",
       provider: els.backtestProvider?.value || "auto",
       scenario: useSweepBest ? "sweep-best" : "current",
     };

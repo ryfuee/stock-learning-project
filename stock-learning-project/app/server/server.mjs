@@ -685,7 +685,19 @@ function runBacktest(paths = legacyPaths, input = {}) {
   const key = updateKey(paths);
   if (backtestInFlight.has(key)) return backtestInFlight.get(key);
   const args = [];
-  for (const field of ["start", "end", "maxSymbols", "provider", "scenario", "buyScoreThreshold", "stopLossPct", "takeProfitPct", "chasePctLimit", "timeStopDays"]) {
+  for (const field of [
+    "start",
+    "end",
+    "maxSymbols",
+    "provider",
+    "strategy",
+    "scenario",
+    "buyScoreThreshold",
+    "stopLossPct",
+    "takeProfitPct",
+    "chasePctLimit",
+    "timeStopDays",
+  ]) {
     if (input[field] !== undefined && input[field] !== "") args.push(`--${field}=${String(input[field])}`);
   }
   const task = new Promise((resolve) => {
@@ -771,7 +783,7 @@ function runParameterSweep(paths = legacyPaths, input = {}) {
   const key = updateKey(paths);
   if (parameterSweepInFlight.has(key)) return parameterSweepInFlight.get(key);
   const args = [];
-  for (const field of ["start", "end", "maxSymbols", "provider", "topN"]) {
+  for (const field of ["start", "end", "maxSymbols", "provider", "strategy", "topN"]) {
     if (input[field] !== undefined && input[field] !== "") args.push(`--${field}=${String(input[field])}`);
   }
   const task = new Promise((resolve) => {

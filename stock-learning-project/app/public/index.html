@@ -353,6 +353,13 @@
             <label>结束日期<input id="backtestEnd" type="date" /></label>
             <label>股票数量上限<input id="backtestMaxSymbols" type="number" min="3" max="50" step="1" value="12" /></label>
             <label>
+              策略
+              <select id="backtestStrategy">
+                <option value="momentum-score">动量评分策略</option>
+                <option value="turtle">海龟趋势突破</option>
+              </select>
+            </label>
+            <label>
               历史行情源
               <select id="backtestProvider">
                 <option value="auto">自动选择真实源</option>
