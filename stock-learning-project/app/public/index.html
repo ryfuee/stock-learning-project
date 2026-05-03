@@ -7,6 +7,20 @@
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
+    <div id="authGate" class="auth-gate" hidden>
+      <form id="authForm" class="auth-card">
+        <p class="eyebrow">账户安全</p>
+        <h1 id="authTitle">登录投研平台</h1>
+        <p id="authSubtitle" class="view-subtitle">使用服务器本地账号进入你的 A 股投研工作台。</p>
+        <div class="form-grid auth-fields">
+          <label>用户名<input name="username" type="text" autocomplete="username" placeholder="admin" required /></label>
+          <label>密码<input name="password" type="password" autocomplete="current-password" minlength="8" required /></label>
+        </div>
+        <button id="authSubmit" class="refresh-button auth-submit" type="submit">登录</button>
+        <p id="authFeedback" class="test-state">首次部署会先初始化管理员账号。</p>
+      </form>
+    </div>
+
     <aside class="sidebar">
       <div class="brand">
         <span class="brand-mark">A</span>
@@ -16,13 +30,20 @@
         </div>
       </div>
       <nav class="nav">
+        <span class="nav-group">工作台</span>
         <a href="#overview">总览</a>
         <a href="#sectors">板块雷达</a>
         <a href="#research">自动调研</a>
+        <span class="nav-group">交易</span>
         <a href="#trading">模拟交易</a>
         <a href="#review">每日复盘</a>
+        <span class="nav-group">策略</span>
         <a href="#strategy">策略优化</a>
+        <a href="#backtest">历史回测</a>
+        <a href="#agent">决策Agent</a>
+        <span class="nav-group">系统</span>
         <a href="#alerts">通知</a>
+        <a href="#config">配置</a>
       </nav>
       <div class="sidebar-foot">
         <small>真实行情源</small>
@@ -33,15 +54,27 @@
     <main class="workspace">
       <header class="topbar">
         <div>
-          <p class="eyebrow">A股专业投研平台</p>
-          <h1>自动调研、实时模拟、盘后复盘</h1>
+          <p class="eyebrow" id="viewEyebrow">A股专业投研平台</p>
+          <h1 id="viewTitle">总览</h1>
+          <p class="view-subtitle" id="viewSubtitle">市场温度、模拟账户和系统动作</p>
         </div>
-        <button id="refreshBtn" class="refresh-button" title="刷新数据">刷新</button>
+        <div class="topbar-actions">
+          <div id="sessionBar" class="session-bar" hidden>
+            <div>
+              <small id="userSummary">未登录</small>
+              <select id="accountSelect" aria-label="选择模拟账户"></select>
+            </div>
+            <button id="createAccountBtn" class="secondary-button" type="button">新账户</button>
+            <button id="logoutBtn" class="secondary-button" type="button">退出</button>
+          </div>
+          <div id="headerMetrics" class="header-metrics"></div>
+          <button id="refreshBtn" class="refresh-button" title="刷新数据">刷新</button>
+        </div>
       </header>
 
       <section class="status-strip" id="statusStrip"></section>
 
-      <section id="overview" class="section">
+      <section id="overview" class="section view-section" data-title="总览" data-subtitle="市场温度、模拟账户和系统动作">
         <div class="section-head">
           <div>
             <h2>总览</h2>
@@ -50,6 +83,50 @@
           <span id="dateBadge" class="date-badge"></span>
         </div>
         <div class="kpi-grid" id="portfolioCards"></div>
+        <article class="panel workflow-panel">
+          <div class="panel-head">
+            <h3>今日工作流</h3>
+            <span>Decision path</span>
+          </div>
+          <div id="workflowGuide" class="workflow-grid"></div>
+        </article>
+        <div class="command-grid">
+          <article class="panel command-panel">
+            <div class="panel-head">
+              <h3>投研指挥台</h3>
+              <span>Market command</span>
+            </div>
+            <div id="commandSummary"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>信号漏斗</h3>
+              <span>Pipeline</span>
+            </div>
+            <div id="signalPipeline" class="pipeline-grid"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>风险磁带</h3>
+              <span>Risk tape</span>
+            </div>
+            <div id="riskTape" class="risk-tape"></div>
+          </article>
+        </div>
+        <article class="panel evolution-panel">
+          <div class="panel-head">
+            <h3>策略进化图</h3>
+            <span>Current -> Optimizer -> Agent</span>
+          </div>
+          <div id="strategyEvolution" class="stack"></div>
+        </article>
+        <article class="panel">
+          <div class="panel-head">
+            <h3>多策略实验室</h3>
+            <span>Strategy candidates</span>
+          </div>
+          <div id="strategyLabOverview" class="stack"></div>
+        </article>
         <div class="content-grid two">
           <article class="panel">
             <div class="panel-head">
@@ -66,9 +143,16 @@
             <div id="systemActions" class="action-list"></div>
           </article>
         </div>
+        <article class="panel">
+          <div class="panel-head">
+            <h3>后台检测</h3>
+            <span>Live checks</span>
+          </div>
+          <div id="liveChecksOverview" class="stack"></div>
+        </article>
       </section>
 
-      <section id="sectors" class="section">
+      <section id="sectors" class="section view-section" data-title="板块雷达" data-subtitle="按赚钱效应、成交额和持续性排序">
         <div class="section-head">
           <div>
             <h2>板块雷达</h2>
@@ -78,70 +162,121 @@
         <div id="hotBoards" class="sector-grid"></div>
       </section>
 
-      <section id="research" class="section">
+      <section id="research" class="section view-section" data-title="自动调研股票" data-subtitle="业务、客户、利润驱动、风险驱动和待验证问题">
         <div class="section-head">
           <div>
             <h2>自动调研股票</h2>
             <p>业务、客户、利润驱动、风险驱动和待验证问题</p>
           </div>
         </div>
-        <div id="researchGrid" class="research-grid"></div>
+        <div class="research-workbench">
+          <aside class="research-controls">
+            <article class="panel">
+              <div class="panel-head">
+                <h3>调研筛选</h3>
+                <span>Research queue</span>
+              </div>
+              <div class="control-stack">
+                <label>搜索股票<input id="researchSearch" type="search" placeholder="名称 / 代码 / 板块" autocomplete="off" /></label>
+                <label>
+                  信号类型
+                  <select id="researchFilter">
+                    <option value="all">全部</option>
+                    <option value="buy">模拟买入</option>
+                    <option value="focus">重点观察</option>
+                    <option value="avoid">模型规避 / 剔除</option>
+                  </select>
+                </label>
+              </div>
+              <div id="researchSummary" class="research-summary"></div>
+            </article>
+            <article class="panel sticky-panel">
+              <div class="panel-head">
+                <h3>焦点公司</h3>
+                <span>Detail</span>
+              </div>
+              <div id="researchFocusPanel"></div>
+            </article>
+          </aside>
+          <div id="researchGrid" class="research-grid"></div>
+        </div>
       </section>
 
-      <section id="trading" class="section">
+      <section id="trading" class="section view-section" data-title="实时模拟交易" data-subtitle="候选信号、持仓、流水和事件上下文">
         <div class="section-head">
           <div>
             <h2>实时模拟交易</h2>
             <p>含佣金、过户费、印花税、滑点和 T+1</p>
           </div>
         </div>
-        <article class="panel">
+        <div class="trading-summary-grid" id="tradingSummary"></div>
+        <article class="panel trade-console">
           <div class="panel-head">
-            <h3>候选信号</h3>
-            <span>只做纸面交易</span>
+            <h3>交易工作台</h3>
+            <span>Live execution</span>
           </div>
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>公司</th>
-                  <th>板块</th>
-                  <th>涨跌幅</th>
-                  <th>成交额</th>
-                  <th>评分</th>
-                  <th>信号</th>
-                  <th>依据</th>
-                </tr>
-              </thead>
+          <div id="tradingCommand" class="trade-command-grid"></div>
+        </article>
+        <div class="module-tabs" aria-label="交易模块">
+          <button type="button" class="active" data-trading-tab="checks">轮询</button>
+          <button type="button" data-trading-tab="candidates">候选</button>
+          <button type="button" data-trading-tab="positions">持仓</button>
+          <button type="button" data-trading-tab="trades">流水</button>
+        </div>
+        <div class="trading-panels">
+        <article class="panel trading-panel" data-trading-panel="checks">
+          <div class="panel-head">
+            <h3>每轮买卖检测</h3>
+            <span>最近轮询</span>
+          </div>
+          <div id="liveChecksTrading" class="stack"></div>
+        </article>
+          <article class="panel trading-panel candidates-panel" data-trading-panel="candidates" hidden>
+            <div class="panel-head">
+              <h3>候选信号</h3>
+              <span>只做纸面交易</span>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>公司</th>
+                    <th>板块</th>
+                    <th>涨跌幅</th>
+                    <th>成交额</th>
+                    <th>评分</th>
+                    <th>信号</th>
+                    <th>依据</th>
+                  </tr>
+                </thead>
               <tbody id="candidateRows"></tbody>
             </table>
           </div>
         </article>
-        <div class="content-grid two">
-          <article class="panel">
-            <div class="panel-head">
-              <h3>模拟持仓</h3>
-              <span>Open</span>
-            </div>
-            <div id="positions" class="stack"></div>
-          </article>
-          <article class="panel">
-            <div class="panel-head">
-              <h3>交易流水</h3>
-              <span>最近50条</span>
-            </div>
-            <div class="table-wrap compact">
-              <table>
-                <thead>
-                  <tr>
-                    <th>日期</th>
-                    <th>方向</th>
-                    <th>股票</th>
-                    <th>股数</th>
-                    <th>价格</th>
-                    <th>费用</th>
-                  </tr>
-                </thead>
+            <article class="panel trading-panel" data-trading-panel="positions" hidden>
+              <div class="panel-head">
+                <h3>模拟持仓</h3>
+                <span>Open</span>
+              </div>
+              <div id="positions" class="stack"></div>
+            </article>
+            <article class="panel trading-panel" data-trading-panel="trades" hidden>
+              <div class="panel-head">
+                <h3>交易流水</h3>
+                <span>最近50条</span>
+              </div>
+              <div class="table-wrap compact">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>时间</th>
+                      <th>方向</th>
+                      <th>股票</th>
+                      <th>股数</th>
+                      <th>价格</th>
+                      <th>费用明细</th>
+                    </tr>
+                  </thead>
                 <tbody id="tradeRows"></tbody>
               </table>
             </div>
@@ -149,7 +284,7 @@
         </div>
       </section>
 
-      <section id="review" class="section">
+      <section id="review" class="section view-section" data-title="每日复盘" data-subtitle="市场、板块、交易动作和明日问题">
         <div class="section-head">
           <div>
             <h2>每日复盘</h2>
@@ -159,13 +294,23 @@
         <div id="dailyReview" class="review-grid"></div>
       </section>
 
-      <section id="strategy" class="section">
+      <section id="strategy" class="section view-section" data-title="策略优化" data-subtitle="胜率、样本、偏好和下一步优化">
         <div class="section-head">
           <div>
             <h2>策略优化</h2>
             <p>胜率、样本、偏好和下一步优化</p>
           </div>
+          <button class="refresh-button" type="button" id="runOptimizerBtn">生成建议</button>
+          <button class="refresh-button" type="button" id="applyOptimizerBtn">应用有界建议</button>
+          <span id="optimizerState" class="test-state">回测完成后会自动刷新优化建议。</span>
         </div>
+        <article class="panel strategy-console">
+          <div class="panel-head">
+            <h3>策略工作台</h3>
+            <span>Strategy cockpit</span>
+          </div>
+          <div id="strategyCommand" class="strategy-command-grid"></div>
+        </article>
         <div class="content-grid two">
           <article class="panel">
             <div class="panel-head">
@@ -182,15 +327,162 @@
             <div id="learning" class="stack"></div>
           </article>
         </div>
+        <article class="panel">
+          <div class="panel-head">
+            <h3>候选策略池</h3>
+            <span>Promotion queue</span>
+          </div>
+          <div id="strategyLabDetail" class="stack"></div>
+        </article>
       </section>
 
-      <section id="alerts" class="section">
+      <section id="backtest" class="section view-section" data-title="历史回测" data-subtitle="真实日线回放、费用模型和基准对比">
+        <div class="section-head">
+          <div>
+            <h2>历史回测</h2>
+            <p>真实日线回放、费用模型和基准对比</p>
+          </div>
+        </div>
+        <article class="panel decision-panel">
+          <div class="panel-head">
+            <h3>回测控制台</h3>
+            <span>Daily replay</span>
+          </div>
+          <div class="form-grid">
+            <label>开始日期<input id="backtestStart" type="date" /></label>
+            <label>结束日期<input id="backtestEnd" type="date" /></label>
+            <label>股票数量上限<input id="backtestMaxSymbols" type="number" min="3" max="50" step="1" value="12" /></label>
+            <label>
+              历史行情源
+              <select id="backtestProvider">
+                <option value="auto">自动选择真实源</option>
+                <option value="baostock">Baostock</option>
+                <option value="akshare">AKShare</option>
+              </select>
+            </label>
+          </div>
+          <div class="inline-actions">
+            <button class="refresh-button" type="button" id="runBacktestBtn">运行回测</button>
+            <button class="secondary-button" type="button" id="runSweepBacktestBtn">回测寻优第一名</button>
+            <span id="backtestState" class="test-state">回测只使用真实历史行情；不会生成模拟新闻或舆情。</span>
+          </div>
+        </article>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>回测表现</h3>
+              <span>Metrics</span>
+            </div>
+            <div id="backtestSummary" class="stack"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>基准对比</h3>
+              <span>Benchmarks</span>
+            </div>
+            <div id="backtestBenchmarks" class="stack"></div>
+          </article>
+        </div>
+        <article class="panel">
+          <div class="panel-head">
+            <h3>最近交易</h3>
+            <span>Replay log</span>
+          </div>
+          <div id="backtestTrades" class="stack"></div>
+        </article>
+        <article class="panel decision-panel">
+          <div class="panel-head">
+            <h3>参数寻优</h3>
+            <span>Multi-window sweep</span>
+          </div>
+          <div class="inline-actions">
+            <button class="refresh-button" type="button" id="runSweepBtn">运行寻优</button>
+            <span id="sweepState" class="test-state">多窗口测试买入阈值、止损、止盈、追高和时间止损。</span>
+          </div>
+          <div id="sweepSummary" class="stack"></div>
+        </article>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>稳健参数排名</h3>
+              <span>Top candidates</span>
+            </div>
+            <div id="sweepRankings" class="stack"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>窗口表现</h3>
+              <span>Best windows</span>
+            </div>
+            <div id="sweepWindows" class="stack"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="agent" class="section view-section" data-title="投研决策 Agent" data-subtitle="观察、诊断、策略姿态和研究队列">
+        <div class="section-head">
+          <div>
+            <h2>投研决策 Agent</h2>
+            <p>观察、诊断、策略姿态和研究队列</p>
+          </div>
+          <button class="refresh-button" type="button" id="runAgentBtn">运行Agent</button>
+          <span id="agentState" class="test-state">Agent 会读取行情、模型、回测和优化器结果。</span>
+        </div>
+        <article class="panel decision-panel">
+          <div class="panel-head">
+            <h3>Agent 姿态</h3>
+            <span>Decision loop</span>
+          </div>
+          <div id="agentSummary" class="stack"></div>
+        </article>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>自适应策略</h3>
+              <span>Policy</span>
+            </div>
+            <div id="agentPolicy" class="stack"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>问题诊断</h3>
+              <span>Diagnostics</span>
+            </div>
+            <div id="agentDiagnostics" class="stack"></div>
+          </article>
+        </div>
+        <div class="content-grid two">
+          <article class="panel">
+            <div class="panel-head">
+              <h3>研究队列</h3>
+              <span>Research queue</span>
+            </div>
+            <div id="agentQueue" class="stack"></div>
+          </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h3>执行计划</h3>
+              <span>Paper only</span>
+            </div>
+            <div id="agentExecution" class="stack"></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="alerts" class="section view-section" data-title="通知中心" data-subtitle="Discord 机器人提醒配置和待发送事件">
         <div class="section-head">
           <div>
             <h2>通知中心</h2>
             <p>Discord 机器人提醒配置和待发送事件</p>
           </div>
         </div>
+        <article class="panel decision-panel">
+          <div class="panel-head">
+            <h3>决策仪表盘</h3>
+            <span>日报摘要</span>
+          </div>
+          <div id="decisionDashboard"></div>
+        </article>
         <div class="content-grid two">
           <article class="panel">
             <div class="panel-head">
@@ -207,6 +499,280 @@
             <div id="settingsList" class="stack"></div>
           </article>
         </div>
+      </section>
+
+      <section id="config" class="section view-section" data-title="配置中心" data-subtitle="纸面交易、模型、事件上下文和提醒参数">
+        <div class="section-head">
+          <div>
+            <h2>配置中心</h2>
+            <p>调整纸面交易、费用、实时刷新和 Discord 提醒参数</p>
+          </div>
+          <span id="configStatus" class="date-badge">未加载</span>
+        </div>
+        <div class="config-shell">
+          <nav class="config-tabs" aria-label="配置分组">
+            <button type="button" data-config-tab="trading">交易</button>
+            <button type="button" data-config-tab="ai">模型</button>
+            <button type="button" data-config-tab="data">数据源</button>
+            <button type="button" data-config-tab="alerts">提醒</button>
+          </nav>
+        </div>
+        <form id="configForm" class="config-grid">
+          <article class="panel" data-config-group="trading">
+            <div class="panel-head">
+              <h3>交易规则</h3>
+              <span>Paper account</span>
+            </div>
+            <div class="form-grid">
+              <label>初始资金<input name="initialCash" type="number" min="1000" step="1000" /></label>
+              <label>最大持仓数<input name="maxPositions" type="number" min="1" max="50" step="1" /></label>
+              <label>单票仓位上限（0.2=20%）<input name="maxPositionPct" type="number" min="0.01" max="1" step="0.01" /></label>
+              <label>买入评分阈值<input name="buyScoreThreshold" type="number" min="0" max="100" step="1" /></label>
+              <label>止损阈值（-5=-5%）<input name="stopLossPct" type="number" min="-99" max="-0.1" step="0.1" /></label>
+              <label>止盈阈值（10=10%）<input name="takeProfitPct" type="number" min="0.1" max="300" step="0.1" /></label>
+              <label class="checkbox-line"><input name="adaptiveRiskEnabled" type="checkbox" /> 启用动态止盈止损</label>
+              <label>最宽止损（-9=-9%）<input name="adaptiveMinStopLossPct" type="number" min="-30" max="-0.1" step="0.1" /></label>
+              <label>最紧止损（-2.5=-2.5%）<input name="adaptiveMaxStopLossPct" type="number" min="-30" max="-0.1" step="0.1" /></label>
+              <label>最低止盈（4=4%）<input name="adaptiveMinTakeProfitPct" type="number" min="0.5" max="100" step="0.1" /></label>
+              <label>最高止盈（18=18%）<input name="adaptiveMaxTakeProfitPct" type="number" min="0.5" max="100" step="0.1" /></label>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="trading">
+            <div class="panel-head">
+              <h3>风控闸门</h3>
+              <span>Risk gates</span>
+            </div>
+            <div class="form-grid">
+              <label class="checkbox-line"><input name="riskControlsEnabled" type="checkbox" /> 启用买入风控闸门</label>
+              <label>单板块仓位上限（0.45=45%）<input name="maxBoardExposurePct" type="number" min="0.1" max="1" step="0.01" /></label>
+              <label>账户最大回撤暂停（6=6%）<input name="maxAccountDrawdownPct" type="number" min="1" max="80" step="0.1" /></label>
+              <label>连续亏损暂停笔数<input name="pauseAfterLossStreak" type="number" min="1" max="20" step="1" /></label>
+              <label>追高限制涨幅（7.5=7.5%）<input name="chasePctLimit" type="number" min="1" max="20" step="0.1" /></label>
+              <label>最低成交额<input name="minAmount" type="number" min="0" step="10000000" /></label>
+              <label>时间止损天数<input name="timeStopDays" type="number" min="1" max="60" step="1" /></label>
+              <label>时间止损最低收益（1=1%）<input name="timeStopMinProfitPct" type="number" min="-10" max="20" step="0.1" /></label>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="trading">
+            <div class="panel-head">
+              <h3>费用与滑点</h3>
+              <span>Cost model</span>
+            </div>
+            <div class="form-grid">
+              <label>佣金率<input name="commissionRate" type="number" min="0" step="0.00001" /></label>
+              <label>最低佣金<input name="minCommission" type="number" min="0" step="0.1" /></label>
+              <label>过户费率<input name="transferFeeRate" type="number" min="0" step="0.000001" /></label>
+              <label>印花税率<input name="stampDutyRate" type="number" min="0" step="0.000001" /></label>
+              <label>滑点率<input name="slippageRate" type="number" min="0" step="0.00001" /></label>
+              <label>交易单位<input name="lotSize" type="number" min="1" step="1" /></label>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="trading">
+            <div class="panel-head">
+              <h3>实时运行</h3>
+              <span>Live loop</span>
+            </div>
+            <div class="form-grid">
+              <label>刷新间隔秒<input name="pollSeconds" type="number" min="15" step="1" /></label>
+            </div>
+            <div class="note-block">
+              <p>保存后，实时脚本下一轮会读取新配置。当前已开仓的持仓不会因为初始资金调整而重算。</p>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="trading">
+            <div class="panel-head">
+              <h3>股票池</h3>
+              <span>Watchlist</span>
+            </div>
+            <div class="form-grid">
+              <label class="wide-field">
+                自选股池
+                <textarea name="watchlistText" rows="7" placeholder="每行一只，例如：600519 贵州茅台 白酒&#10;也支持：600519,000001,300750"></textarea>
+              </label>
+            </div>
+            <div class="note-block">
+              <p>参考 daily_stock_analysis 的 STOCK_LIST 思路：这里的股票会和系统内置观察池一起进入行情、调研和模型审查。服务器环境变量 `STOCK_LIST` 也会被读取。</p>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="ai">
+            <div class="panel-head">
+              <h3>大模型决策</h3>
+              <span>LLM committee</span>
+            </div>
+            <div class="form-grid">
+              <label class="checkbox-line"><input name="llmEnabled" type="checkbox" /> 启用大模型参与</label>
+              <label>
+                模型接口
+                <select name="llmProvider">
+                  <option value="openai-responses">OpenAI API - Responses（推荐）</option>
+                  <option value="openai-compatible">OpenAI 兼容接口 - Chat Completions</option>
+                  <option value="z-ai-chat">Z.AI / GLM - Chat Completions</option>
+                  <option value="openai-chat">OpenAI API - Chat Completions（旧版）</option>
+                  <option value="anthropic-messages">Claude API - Messages</option>
+                </select>
+              </label>
+              <label>
+                参与模式
+                <select name="llmDecisionMode">
+                  <option value="score_veto">调分 + 否决</option>
+                  <option value="score">仅调分</option>
+                  <option value="advisory">只给建议</option>
+                </select>
+              </label>
+              <label class="wide-field">Base URL<input name="llmBaseUrl" type="url" placeholder="https://api.openai.com/v1" autocomplete="off" /></label>
+              <label class="wide-field">模型名<input name="llmModel" type="text" placeholder="由服务器环境变量或这里配置" autocomplete="off" /></label>
+              <label class="wide-field">
+                API Key
+                <input name="llmApiKey" type="password" placeholder="留空保留现有 Key" autocomplete="off" />
+              </label>
+              <label class="checkbox-line"><input name="clearLlmApiKey" type="checkbox" /> 清除已保存 API Key</label>
+              <label>审查候选数<input name="llmMaxCandidates" type="number" min="1" max="12" step="1" /></label>
+              <label>最大调分<input name="llmScoreImpact" type="number" min="0" max="20" step="1" /></label>
+              <label>最低信心<input name="llmMinConfidence" type="number" min="0" max="100" step="1" /></label>
+              <label class="checkbox-line"><input name="llmRequireBuyApproval" type="checkbox" /> 买入需模型确认</label>
+              <label>温度<input name="llmTemperature" type="number" min="0" max="1" step="0.1" /></label>
+              <label>超时毫秒<input name="llmTimeoutMs" type="number" min="5000" max="180000" step="1000" /></label>
+            </div>
+            <div class="note-block">
+              <strong>这不是 ChatGPT 套餐选择</strong>
+              <p>这里选择的是服务器调用大模型的 API 协议。ChatGPT Pro/Plus 订阅不能直接当作 API Key 使用；需要单独在 OpenAI Platform 或兼容厂商创建 API Key，再放到页面或服务器环境变量。</p>
+              <p id="llmProviderHint">选择 OpenAI API - Responses 时，Base URL 通常保持 https://api.openai.com/v1。</p>
+              <p id="llmApiKeyState">API Key 未加载。页面保存后只写入本机密钥文件，不会回显完整 Key。</p>
+              <p id="llmState">大模型状态未加载。API Key 只从服务器环境变量读取，不在页面保存。</p>
+              <div class="inline-actions">
+                <button class="secondary-button" type="button" id="testLlmBtn">测试连接</button>
+                <span id="llmTestState" class="test-state">尚未测试。本测试只发送一条最小文本请求。</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="data">
+            <div class="panel-head">
+              <h3>事件上下文</h3>
+              <span>News & filings</span>
+            </div>
+            <div class="form-grid">
+              <label class="checkbox-line"><input name="contextEnabled" type="checkbox" /> 启用事件上下文</label>
+              <label class="checkbox-line"><input name="contextIncludeNews" type="checkbox" /> 财经新闻</label>
+              <label class="checkbox-line"><input name="contextIncludeAnnouncements" type="checkbox" /> 公司公告</label>
+              <label class="checkbox-line"><input name="contextIncludeF10" type="checkbox" /> F10 概况</label>
+              <label>每票新闻数<input name="contextMaxNews" type="number" min="0" max="20" step="1" /></label>
+              <label>每票公告数<input name="contextMaxAnnouncements" type="number" min="0" max="10" step="1" /></label>
+              <label>上下文超时毫秒<input name="contextTimeoutMs" type="number" min="2000" max="30000" step="1000" /></label>
+            </div>
+            <div class="note-block">
+              <p>模型决策会读取真实新闻、公告和 F10 摘要；数据源失败时只记录 warning，不生成虚假事件。</p>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="data">
+            <div class="panel-head">
+              <h3>事件搜索</h3>
+              <span>Bocha / Tavily / SerpAPI / Anspire</span>
+            </div>
+            <div class="form-grid">
+              <label class="checkbox-line"><input name="eventSearchEnabled" type="checkbox" /> 启用实时事件搜索</label>
+              <label class="checkbox-line"><input name="searchUseBocha" type="checkbox" /> Bocha（中文优先）</label>
+              <label class="checkbox-line"><input name="searchUseTavily" type="checkbox" /> Tavily（AI 搜索）</label>
+              <label class="checkbox-line"><input name="searchUseSerpApi" type="checkbox" /> SerpAPI（Google News）</label>
+              <label class="checkbox-line"><input name="searchUseAnspire" type="checkbox" /> Anspire（中文搜索）</label>
+              <label>搜索候选数<input name="searchMaxCandidates" type="number" min="1" max="12" step="1" /></label>
+              <label>每票查询数<input name="searchMaxQueriesPerStock" type="number" min="1" max="4" step="1" /></label>
+              <label>每次结果数<input name="searchResultsPerQuery" type="number" min="1" max="10" step="1" /></label>
+              <label>
+                时间范围
+                <select name="searchFreshness">
+                  <option value="oneDay">近一天</option>
+                  <option value="oneWeek">近一周</option>
+                  <option value="oneMonth">近一月</option>
+                  <option value="oneYear">近一年</option>
+                  <option value="noLimit">不限</option>
+                </select>
+              </label>
+              <label>超时毫秒<input name="searchTimeoutMs" type="number" min="3000" max="30000" step="1000" /></label>
+              <label>缓存小时<input name="searchCacheHours" type="number" min="0" max="72" step="1" /></label>
+              <label class="wide-field">Bocha API Key<input name="bochaApiKey" type="password" placeholder="留空保留现有 Key" autocomplete="off" /></label>
+              <label class="checkbox-line"><input name="clearBochaApiKey" type="checkbox" /> 清除 Bocha Key</label>
+              <label class="wide-field">Tavily API Key<input name="tavilyApiKey" type="password" placeholder="留空保留现有 Key" autocomplete="off" /></label>
+              <label class="checkbox-line"><input name="clearTavilyApiKey" type="checkbox" /> 清除 Tavily Key</label>
+              <label class="wide-field">SerpAPI Key<input name="serpApiKey" type="password" placeholder="留空保留现有 Key" autocomplete="off" /></label>
+              <label class="checkbox-line"><input name="clearSerpApiKey" type="checkbox" /> 清除 SerpAPI Key</label>
+              <label class="wide-field">Anspire API Key<input name="anspireApiKey" type="password" placeholder="留空保留现有 Key" autocomplete="off" /></label>
+              <label class="checkbox-line"><input name="clearAnspireApiKey" type="checkbox" /> 清除 Anspire Key</label>
+            </div>
+            <div class="note-block">
+              <p id="eventSearchState">事件搜索 Key 未加载。没有 Key 时不会调用外部搜索 API，也不会生成模拟舆情。</p>
+              <div id="eventSearchKeyGrid" class="key-status-grid"></div>
+              <div class="inline-actions">
+                <select id="eventSearchTestProvider" class="inline-select" aria-label="选择要测试的搜索源">
+                  <option value="bocha">Bocha</option>
+                  <option value="tavily">Tavily</option>
+                  <option value="serpApi">SerpAPI</option>
+                  <option value="anspire">Anspire</option>
+                </select>
+                <button class="secondary-button" type="button" id="testEventSearchBtn">测试搜索</button>
+                <span class="test-state" id="eventSearchTestState">选择搜索源后可测试连通性。</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="data">
+            <div class="panel-head">
+              <h3>增强数据源</h3>
+              <span>AKShare / Baostock</span>
+            </div>
+            <div class="form-grid">
+              <label class="checkbox-line"><input name="dataProviderEnabled" type="checkbox" /> 启用增强财务数据</label>
+              <label class="checkbox-line"><input name="useAkshare" type="checkbox" /> AKShare（无 Key）</label>
+              <label class="checkbox-line"><input name="useBaostock" type="checkbox" /> Baostock（无 Key）</label>
+              <label class="checkbox-line"><input name="useTushare" type="checkbox" /> Tushare（可选 Token）</label>
+              <label>增强候选数<input name="dataProviderMaxCandidates" type="number" min="1" max="20" step="1" /></label>
+              <label>超时毫秒<input name="dataProviderTimeoutMs" type="number" min="3000" max="60000" step="1000" /></label>
+              <label>Python 命令<input name="dataProviderPythonBin" type="text" placeholder="python3" autocomplete="off" /></label>
+              <label class="wide-field">
+                Tushare Token
+                <input name="tushareToken" type="password" placeholder="留空保留现有 Token；没有可不填" autocomplete="off" />
+              </label>
+              <label class="checkbox-line"><input name="clearTushareToken" type="checkbox" /> 清除已保存 Tushare Token</label>
+            </div>
+            <div class="note-block">
+              <p id="dataProviderState">增强数据源未加载。AKShare/Baostock 是无 Key 平替；Tushare 只在启用并配置 Token 后使用。</p>
+            </div>
+          </article>
+
+          <article class="panel" data-config-group="alerts">
+            <div class="panel-head">
+              <h3>Discord 提醒</h3>
+              <span>默认关闭</span>
+            </div>
+            <div class="form-grid">
+              <label class="checkbox-line"><input name="discordEnabled" type="checkbox" /> 启用 Discord 提醒</label>
+              <label>Webhook URL<input name="discordWebhookUrl" type="password" placeholder="留空保留现有" autocomplete="off" /></label>
+              <label class="checkbox-line"><input name="clearWebhook" type="checkbox" /> 清除已保存 webhook</label>
+            </div>
+            <div class="event-grid">
+              <label><input name="paperBuy" type="checkbox" /> 模拟买入</label>
+              <label><input name="takeProfit" type="checkbox" /> 模拟止盈</label>
+              <label><input name="stopLoss" type="checkbox" /> 模拟止损</label>
+              <label><input name="dailyReview" type="checkbox" /> 每日复盘</label>
+              <label><input name="learningNote" type="checkbox" /> 学习知识点</label>
+            </div>
+            <div class="note-block">
+              <p id="webhookState">Webhook 未加载。保存 webhook 只写入本地配置，不会提交到 GitHub。</p>
+            </div>
+          </article>
+
+          <div class="config-actions">
+            <span class="test-state" id="configFeedback">修改后点击保存配置。</span>
+            <button class="refresh-button" type="submit">保存配置</button>
+            <button class="secondary-button" type="button" id="reloadConfigBtn">重新加载</button>
+          </div>
+        </form>
       </section>
     </main>
 
