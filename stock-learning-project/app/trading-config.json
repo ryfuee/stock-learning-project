@@ -1,4 +1,5 @@
 {
+  "activeStrategy": "momentum-score",
   "initialCash": 100000,
   "maxPositions": 5,
   "maxPositionPct": 0.2,

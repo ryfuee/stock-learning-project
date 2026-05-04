@@ -117,7 +117,7 @@ function parseArgs() {
     end,
     maxSymbols: clamp(Math.round(num(args.maxSymbols, 12)), 3, 50),
     provider: args.provider || "auto",
-    strategy: args.strategy || "momentum-score",
+    strategy: args.strategy || "",
     topN: clamp(Math.round(num(args.topN, 12)), 3, 50),
     buyScoreThresholds: parseNumberList(args.buyScoreThresholds, [72, 75, 78]),
     stopLosses: parseNumberList(args.stopLosses, [-6, -5, -4]),
@@ -475,7 +475,6 @@ function buildMarkdown(report) {
 
 async function main() {
   const args = parseArgs();
-  const strategy = resolveStrategy(args.strategy);
   const storedConfig = await readJson(configFile, {});
   const config = {
     ...defaultConfig,
@@ -483,6 +482,7 @@ async function main() {
     dataProviders: { ...defaultConfig.dataProviders, ...(storedConfig.dataProviders || {}) },
     riskControls: { ...defaultConfig.riskControls, ...(storedConfig.riskControls || {}) },
   };
+  const strategy = resolveStrategy(args.strategy || config.activeStrategy || "momentum-score");
   const dashboard = await readJson(dashboardFile, {});
   const codes = chooseUniverse(config, dashboard, args.maxSymbols);
   const history = await fetchHistory({ codes, start: args.start, end: args.end, provider: args.provider, config });

@@ -369,9 +369,12 @@
             </label>
           </div>
           <div class="inline-actions">
-            <button class="refresh-button" type="button" id="runBacktestBtn">运行回测</button>
-            <button class="secondary-button" type="button" id="runSweepBacktestBtn">回测寻优第一名</button>
+            <button class="refresh-button" type="button" id="runBacktestBtn">运行当前策略回测</button>
+            <button class="secondary-button" type="button" id="runSweepBacktestBtn">验证寻优第一名</button>
             <span id="backtestState" class="test-state">回测只使用真实历史行情；不会生成模拟新闻或舆情。</span>
+          </div>
+          <div class="note-block">
+            <p>运行当前策略回测会使用上方选择的策略和配置中心的当前参数；验证寻优第一名会使用最近一次寻优报告里的策略和第一名参数，样本不足时会被拦截。</p>
           </div>
         </article>
         <div class="content-grid two">
@@ -531,6 +534,13 @@
               <span>Paper account</span>
             </div>
             <div class="form-grid">
+              <label>
+                生效策略
+                <select name="activeStrategy">
+                  <option value="momentum-score">动量评分策略</option>
+                  <option value="turtle">海龟趋势突破</option>
+                </select>
+              </label>
               <label>初始资金<input name="initialCash" type="number" min="1000" step="1000" /></label>
               <label>最大持仓数<input name="maxPositions" type="number" min="1" max="50" step="1" /></label>
               <label>单票仓位上限（0.2=20%）<input name="maxPositionPct" type="number" min="0.01" max="1" step="0.01" /></label>

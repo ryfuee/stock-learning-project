@@ -1968,6 +1968,9 @@ function fillConfigForm(config) {
     const input = els.configForm.elements[key];
     if (input) input.value = value;
   }
+  const activeStrategy = trading.activeStrategy || "momentum-score";
+  if (els.configForm.elements.activeStrategy) els.configForm.elements.activeStrategy.value = activeStrategy;
+  if (els.backtestStrategy) els.backtestStrategy.value = activeStrategy;
   els.configForm.elements.watchlistText.value = trading.watchlistText || "";
   els.configForm.elements.adaptiveRiskEnabled.checked = adaptiveRisk.enabled !== false;
   els.configForm.elements.adaptiveMinStopLossPct.value = adaptiveRisk.minStopLossPct ?? -9;
@@ -2092,6 +2095,7 @@ function readConfigForm() {
     const value = form.elements[field]?.value;
     if (value !== "") trading[field] = Number(value);
   }
+  trading.activeStrategy = form.elements.activeStrategy?.value || "momentum-score";
   trading.watchlistText = form.elements.watchlistText?.value.trim() || "";
   trading.llm = {
     enabled: form.elements.llmEnabled.checked,
@@ -2383,11 +2387,12 @@ async function runParameterSweepFromUi() {
     els.sweepState.classList.remove("good", "warn");
   }
   try {
+    const selectedStrategy = els.backtestStrategy?.value || latestConfig?.trading?.activeStrategy || "momentum-score";
     const payload = {
       start: els.backtestStart?.value || dateDaysAgo(730),
       end: els.backtestEnd?.value || new Date().toISOString().slice(0, 10),
       maxSymbols: Number(els.backtestMaxSymbols?.value || 12),
-      strategy: els.backtestStrategy?.value || "momentum-score",
+      strategy: selectedStrategy,
       provider: els.backtestProvider?.value || "auto",
       topN: 12,
     };
@@ -2642,8 +2647,16 @@ els.createAccountBtn?.addEventListener("click", async () => {
 async function runBacktestFromUi({ useSweepBest = false } = {}) {
   const trigger = useSweepBest ? els.runSweepBacktestBtn : els.runBacktestBtn;
   const sweepBest = latestSweep?.rankings?.[0];
-  if (useSweepBest && !sweepBest) {
-    els.backtestState.textContent = "还没有寻优结果。请先运行寻优。";
+  const sweepSummary = sweepBest?.summary || {};
+  const sweepBestInvalid =
+    !sweepBest ||
+    Number(sweepBest.score ?? -999) <= -900 ||
+    Number(sweepSummary.windowCount || 0) === 0 ||
+    Number(sweepSummary.totalTrades || 0) < 2;
+  if (useSweepBest && sweepBestInvalid) {
+    els.backtestState.textContent = sweepBest
+      ? "寻优第一名样本不足或评分无效，不能直接验证。请扩大股票数、拉长区间，或换一个策略再寻优。"
+      : "还没有寻优结果。请先运行寻优。";
     els.backtestState.classList.add("warn");
     els.backtestState.classList.remove("good");
     return;
@@ -2654,11 +2667,14 @@ async function runBacktestFromUi({ useSweepBest = false } = {}) {
   els.backtestState.textContent = useSweepBest ? "正在用寻优第一名参数回放真实历史行情..." : "正在抓取真实历史行情并回放当前生效策略...";
   els.backtestState.classList.remove("good", "warn");
   try {
+    const selectedStrategy = els.backtestStrategy?.value || latestConfig?.trading?.activeStrategy || "momentum-score";
+    const strategy = useSweepBest ? latestSweep?.strategy?.id || selectedStrategy : selectedStrategy;
+    if (els.backtestStrategy && strategy) els.backtestStrategy.value = strategy;
     const payload = {
       start: els.backtestStart?.value || dateDaysAgo(365),
       end: els.backtestEnd?.value || new Date().toISOString().slice(0, 10),
       maxSymbols: Number(els.backtestMaxSymbols?.value || 12),
-      strategy: els.backtestStrategy?.value || "momentum-score",
+      strategy,
       provider: els.backtestProvider?.value || "auto",
       scenario: useSweepBest ? "sweep-best" : "current",
     };
@@ -2708,11 +2724,11 @@ async function runBacktestFromUi({ useSweepBest = false } = {}) {
   } finally {
     if (els.runBacktestBtn) {
       els.runBacktestBtn.disabled = false;
-      els.runBacktestBtn.textContent = "运行回测";
+      els.runBacktestBtn.textContent = "运行当前策略回测";
     }
     if (els.runSweepBacktestBtn) {
       els.runSweepBacktestBtn.disabled = false;
-      els.runSweepBacktestBtn.textContent = "回测寻优第一名";
+      els.runSweepBacktestBtn.textContent = "验证寻优第一名";
     }
   }
 }

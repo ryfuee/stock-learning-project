@@ -102,7 +102,7 @@ function parseArgs() {
     end,
     maxSymbols: clamp(Math.round(num(args.maxSymbols, 12)), 3, 50),
     provider: args.provider || "auto",
-    strategy: args.strategy || "momentum-score",
+    strategy: args.strategy || "",
     scenario: args.scenario || "current",
     overrides: {
       buyScoreThreshold: args.buyScoreThreshold === undefined ? undefined : num(args.buyScoreThreshold),
@@ -514,7 +514,6 @@ function buildMarkdown(report) {
 
 async function main() {
   const args = parseArgs();
-  const strategy = resolveStrategy(args.strategy);
   const storedConfig = await readJson(configFile, {});
   const baseConfig = {
     ...defaultConfig,
@@ -522,6 +521,7 @@ async function main() {
     dataProviders: { ...defaultConfig.dataProviders, ...(storedConfig.dataProviders || {}) },
     riskControls: { ...defaultConfig.riskControls, ...(storedConfig.riskControls || {}) },
   };
+  const strategy = resolveStrategy(args.strategy || baseConfig.activeStrategy || "momentum-score");
   const config = {
     ...applyBacktestOverrides(baseConfig, args.overrides),
     backtestScenario: args.scenario,

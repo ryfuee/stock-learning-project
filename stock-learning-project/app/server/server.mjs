@@ -316,6 +316,9 @@ function sanitizeTradingConfig(input) {
   if (typeof input.watchlistText === "string") {
     result.watchlistText = input.watchlistText.trim().slice(0, 12000);
   }
+  if (typeof input.activeStrategy === "string" && ["momentum-score", "turtle"].includes(input.activeStrategy)) {
+    result.activeStrategy = input.activeStrategy;
+  }
 
   return result;
 }
